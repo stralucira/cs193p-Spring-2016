@@ -8,6 +8,30 @@
 
 import UIKit
 import CoreData
+// FIXME: comparison operators with optionals were removed from the Swift Standard Libary.
+// Consider refactoring the code to use the non-optional operators.
+fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
+  switch (lhs, rhs) {
+  case let (l?, r?):
+    return l < r
+  case (nil, _?):
+    return true
+  default:
+    return false
+  }
+}
+
+// FIXME: comparison operators with optionals were removed from the Swift Standard Libary.
+// Consider refactoring the code to use the non-optional operators.
+fileprivate func > <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
+  switch (lhs, rhs) {
+  case let (l?, r?):
+    return l > r
+  default:
+    return rhs < lhs
+  }
+}
+
 
 // uses CoreDataTableViewController as its superclass
 // so all we need to do is set the fetchedResultsController var
@@ -18,9 +42,9 @@ class TweetersTableViewController: CoreDataTableViewController
     var mention: String? { didSet { updateUI() } }
     var managedObjectContext: NSManagedObjectContext? { didSet { updateUI() } }
     
-    private func updateUI() {
-        if let context = managedObjectContext where mention?.characters.count > 0 {
-            let request = NSFetchRequest(entityName: "TwitterUser")
+    fileprivate func updateUI() {
+        if let context = managedObjectContext, mention?.characters.count > 0 {
+            let request = NSFetchRequest<NSFetchRequestResult>(entityName: "TwitterUser")
             request.predicate = NSPredicate(format: "any tweets.text contains[c] %@ and !screenName beginswith[c] %@", mention!, "darkside")
             request.sortDescriptors = [NSSortDescriptor(
                 key: "screenName",
@@ -43,12 +67,12 @@ class TweetersTableViewController: CoreDataTableViewController
     // the most important call is fetchedResultsController?.objectAtIndexPath(indexPath)
     // (that's how we get the object that is in this row so we can load the cell up)
     
-    override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCellWithIdentifier("TwitterUserCell", forIndexPath: indexPath)
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "TwitterUserCell", for: indexPath)
 
-        if let twitterUser = fetchedResultsController?.objectAtIndexPath(indexPath) as? TwitterUser {
+        if let twitterUser = fetchedResultsController?.object(at: indexPath) as? TwitterUser {
             var screenName: String?
-            twitterUser.managedObjectContext?.performBlockAndWait {
+            twitterUser.managedObjectContext?.performAndWait {
                 // it's easy to forget to do this on the proper queue
                 screenName = twitterUser.screenName
                 // we're not assuming the context is a main queue context
@@ -69,13 +93,13 @@ class TweetersTableViewController: CoreDataTableViewController
     // private func which figures out how many tweets
     // were tweeted by the given user that contain our mention
     
-    private func tweetCountWithMentionByTwitterUser(user: TwitterUser) -> Int?
+    fileprivate func tweetCountWithMentionByTwitterUser(_ user: TwitterUser) -> Int?
     {
         var count: Int?
-        user.managedObjectContext?.performBlockAndWait {
-            let request = NSFetchRequest(entityName: "Tweet")
+        user.managedObjectContext?.performAndWait {
+            let request = NSFetchRequest<NSFetchRequestResult>(entityName: "Tweet")
             request.predicate = NSPredicate(format: "text contains[c] %@ and tweeter = %@", self.mention!, user)
-            count = user.managedObjectContext?.countForFetchRequest(request, error: nil)
+            count = user.managedObjectContext?.count(for: request, error: nil)
         }
         return count
     }

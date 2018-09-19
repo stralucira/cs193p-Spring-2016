@@ -22,7 +22,7 @@ class TweetTableViewCell: UITableViewCell
         }
     }
     
-    private func updateUI()
+    fileprivate func updateUI()
     {
         // reset any existing tweet information
         tweetTextLabel?.attributedText = nil
@@ -43,16 +43,16 @@ class TweetTableViewCell: UITableViewCell
             tweetScreenNameLabel?.text = "\(tweet.user)" // tweet.user.description
             
             if let profileImageURL = tweet.user.profileImageURL {
-                if let imageData = NSData(contentsOfURL: profileImageURL) { // blocks main thread!
+                if let imageData = Data(contentsOfURL: profileImageURL) { // blocks main thread!
                     tweetProfileImageView?.image = UIImage(data: imageData)
                 }
             }
             
-            let formatter = NSDateFormatter()
-            if NSDate().timeIntervalSinceDate(tweet.created) > 24*60*60 {
-                formatter.dateStyle = NSDateFormatterStyle.ShortStyle
+            let formatter = DateFormatter()
+            if Date().timeIntervalSinceDate(tweet.created) > 24*60*60 {
+                formatter.dateStyle = DateFormatter.Style.short
             } else {
-                formatter.timeStyle = NSDateFormatterStyle.ShortStyle
+                formatter.timeStyle = DateFormatter.Style.short
             }
             tweetCreatedLabel?.text = formatter.stringFromDate(tweet.created)
         }
